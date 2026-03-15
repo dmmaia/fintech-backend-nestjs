@@ -29,6 +29,10 @@ export class TransactionsService {
     return newTransaction
   }
 
+  async changeStatus(id, status) {
+    await this.transactionRepository.update(id, {status})
+  }
+
   async deposit(dto:DepositDto){
     const account = await this.accountService.findOne(dto.accountId)
     if(!account) throw new NotFoundException('Account not found')
