@@ -10,7 +10,7 @@ import {
 import { LedgerService } from './ledger.service';
 
 @Controller('ledger')
-export class ledgerController {
+export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {
   }
 
