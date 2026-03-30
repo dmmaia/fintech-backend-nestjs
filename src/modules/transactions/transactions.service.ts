@@ -23,13 +23,18 @@ export class TransactionsService {
     newTransaction.currency = dto.currency
     newTransaction.status = "PENDING"
     newTransaction.senderAccountId = dto.senderAccountId
+    newTransaction.providerTransactionId = dto.providerTransactionId,
     newTransaction.receiverAccountId = dto.receiverAccountId
 
-    await this.transactionRepository.create(newTransaction)
+    this.transactionRepository.save(newTransaction)
     return newTransaction
   }
 
   async changeStatus(id, status) {
+    this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {
+        eventId: id
+      });
+    
     await this.transactionRepository.update(id, {status})
   }
 
@@ -57,6 +62,12 @@ export class TransactionsService {
 
   async findOne(id: string) {
     const transaction = await this.transactionRepository.findOneBy({id})
+    if (!transaction) throw new NotFoundException('Transaction not found');
+    return transaction
+  }
+
+  async findOneByProvider(id: string) {
+    const transaction = await this.transactionRepository.findOneBy({providerTransactionId:id})
     if (!transaction) throw new NotFoundException('Transaction not found');
     return transaction
   }

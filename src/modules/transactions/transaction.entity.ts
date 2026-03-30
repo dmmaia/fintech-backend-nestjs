@@ -15,6 +15,9 @@ export class Transaction {
   senderAccountId: string;
 
   @Column()
+  providerTransactionId: string;
+
+  @Column()
   receiverAccountId: string;
 
   @Column({ default: 'PENDING' })

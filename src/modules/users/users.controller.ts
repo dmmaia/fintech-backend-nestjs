@@ -9,6 +9,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './users.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('users')
 export class UsersController {
@@ -18,7 +19,9 @@ export class UsersController {
   create(@Body() dto: CreateUserDto){
     return this.usersService.create(dto);
   }
-
+  
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id)

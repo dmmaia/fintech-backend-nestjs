@@ -9,6 +9,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { WebhooksModule } from './modules/webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { JwtModule } from '@nestjs/jwt';
     TransactionsModule,
     LedgerModule,
     UsersModule,
-    AuthModule
+    AuthModule,
+    WebhooksModule
   ]
 })
 export class AppModule {}

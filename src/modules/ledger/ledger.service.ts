@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateLedgerDto } from './ledger.dto';
 import { LedgerEntry } from './ledger.entity';
 import { Repository } from 'typeorm';
@@ -14,6 +14,8 @@ export class LedgerService {
   ){}
 
   async create(dto: CreateLedgerDto) {
+    var ledgerCheck = await this.ledgerRepository.findOneBy({transactionId: dto.transactionId,accountId:dto.accountId})
+    if(ledgerCheck)throw new ConflictException('Transaction already registered')
     return await this.ledgerRepository.create(dto)
   }
 

@@ -7,6 +7,9 @@ export class CreateTransactionDto {
     @IsUUID()
     receiverAccountId: string;
 
+    @IsString()
+    providerTransactionId: string;
+
     @IsNumber()
     amount: number;
 
