@@ -1,17 +1,18 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 @Entity({ name: 'ledger' })
+@Unique(['accountId', 'transactionId', 'type'])
 export class LedgerEntry {
   @PrimaryGeneratedColumn()
   id: string;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('int')
   amount: number;
 
   @Column()
   accountId: string;
 
-  @Column()
+  @Column({nullable: false})
   transactionId: string;
 
   @Column()
