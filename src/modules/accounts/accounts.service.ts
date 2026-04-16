@@ -23,6 +23,9 @@ export class AccountsService {
     if(!account) throw new NotFoundException('Account not found')
     return account
   }
+  async changeBalance(id, amount) {
+    await this.accountRepository.increment({id}, 'balance', amount)
+  }
 
   async find(){
     return await this.accountRepository.find()

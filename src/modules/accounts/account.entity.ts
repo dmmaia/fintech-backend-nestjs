@@ -12,6 +12,9 @@ export class Account {
   @Column()
   balance: number;
 
+  @Column()
+  reservedBalance: number;
+
   @Column({ default: true })
   isActive: boolean;
 

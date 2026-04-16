@@ -1,40 +1,57 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTransactionDto, DepositDto } from './transaction.dto';
 import { Transaction } from './transaction.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuid } from 'uuid'
 import { AccountsService } from '../accounts/accounts.service';
 import { EVENTS } from 'src/events/event.constants';
+import { Account } from '../accounts/account.entity';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @InjectRepository(Transaction) private readonly transactionRepository: Repository<Transaction>,
     private eventEmitter: EventEmitter2,
-    private accountService: AccountsService
+    private accountService: AccountsService,
+    private dataSource: DataSource,
   ){}
 
   async create(dto: CreateTransactionDto) {
-    const newTransaction = new Transaction()
-    newTransaction.id = uuid()
-    newTransaction.amount = dto.amount
-    newTransaction.currency = dto.currency
-    newTransaction.status = "PENDING"
-    newTransaction.senderAccountId = dto.senderAccountId
-    newTransaction.providerTransactionId = dto.providerTransactionId,
-    newTransaction.receiverAccountId = dto.receiverAccountId
+    const account = await this.accountService.findOne(dto.senderAccountId)
+    if(account.balance - account.reservedBalance<dto.amount)
+      throw new Error("Insufficient funds")
 
-    this.transactionRepository.save(newTransaction)
-    return newTransaction
+    return await this.dataSource.transaction(async (manager)=> {
+      const newTransaction = await manager.insert(Transaction,{
+        amount: dto.amount,
+        status: "PENDING",
+        senderAccountId: dto.senderAccountId,
+        providerTransactionId: dto.providerTransactionId,
+        receiverAccountId: dto.receiverAccountId
+      })
+
+      await manager.increment(Account, {id:dto.senderAccountId}, 'reservedBalance', dto.amount)
+
+      this.eventEmitter.emit(EVENTS.TRANSACTION_CREATED, {
+          ...newTransaction
+        });
+    
+      return newTransaction
+    })
   }
 
   async changeStatus(id, status) {
-    this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {
-        eventId: id
-      });
-    
+    const transaction = await this.transactionRepository.findOneBy({id})
+    if(status == "COMPLETED")
+      this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {
+          ...transaction
+        });
+    else
+      this.eventEmitter.emit(EVENTS.TRANSACTION_FAILED, {
+          ...transaction
+        });
     await this.transactionRepository.update(id, {status})
   }
 
