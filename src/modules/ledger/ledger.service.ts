@@ -18,9 +18,25 @@ export class LedgerService {
   ){}
 
   async create(dto: CreateLedgerDto) {
-    var ledgerCheck = await this.ledgerRepository.findOneBy({transactionId: dto.transactionId,accountId:dto.accountId})
-    if(ledgerCheck)throw new ConflictException('Transaction already registered')
-    return await this.ledgerRepository.create(dto)
+    await this.dataSource.transaction(async (manager)=>{
+      if(dto.type=="DEBIT"){
+        const account = await this.accountService.findOne(dto.accountId)
+        if(account.balance - account.reservedBalance<dto.amount)
+          throw new Error("Insufficient funds")
+        await manager.increment(Account, {id:dto.accountId}, 'reservedBalance', dto.amount)
+      }
+      
+      await manager.insert(LedgerEntry, {
+        accountId: dto.accountId,
+        amount: dto.amount,
+        type: dto.type,
+        transactionId:dto.transactionId
+      })
+      await manager.increment(Account, {id:dto.accountId}, 'balance', dto.type=="CREDIT"?dto.amount:-dto.amount)
+      if(dto.type=="DEBIT"){
+        await manager.increment(Account, {id:dto.accountId}, 'reservedBalance', -dto.amount)
+      }
+    })
   }
 
   async findByAccount(accountId: string): Promise<LedgerEntry[]> {
@@ -34,6 +50,8 @@ export class LedgerService {
     if (!ledger) throw new NotFoundException('No ledger found');
     return ledger
   }
+
+  
 
   async failedTransaction({transactionId, senderId, amount}){
     await this.dataSource.transaction(async (manager)=>{

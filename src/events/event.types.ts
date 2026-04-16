@@ -11,3 +11,8 @@ export interface DepositRequestedEvent {
   accountId: string,
   amount: number;
 }
+export interface FailedRequestedEvent {
+  eventId: string,
+  accountId: string,
+  amount: number;
+}

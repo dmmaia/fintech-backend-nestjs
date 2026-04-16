@@ -17,21 +17,28 @@ private schedulerRegistry: SchedulerRegistry) {}
     @OnEvent(EVENTS.DEPOSIT_REQUESTED)
     async handleDeposit(event: eventTypes.DepositRequestedEvent) {
         await this.ledgerService.create({
-        accountId: event.accountId,
-        amount: event.amount,
-        type: 'CREDIT',
-        transactionId: event.eventId
+            accountId: event.accountId,
+            amount: event.amount,
+            type: 'CREDIT',
+            transactionId: event.eventId
         })
     }
 
     @OnEvent(EVENTS.WITHDRAW_REQUESTED)
     async handleWithdraw(event: eventTypes.DepositRequestedEvent) {
-        await this.ledgerService.create({
-        accountId: event.accountId,
-        amount: event.amount,
-        type: 'DEBIT',
-        transactionId: event.eventId
-        })
+        try {
+            await this.ledgerService.create({
+                accountId: event.accountId,
+                amount: event.amount,
+                type: 'DEBIT',
+                transactionId: event.eventId
+            })
+        } catch (error) {
+            if(error instanceof QueryFailedError && error.driverError.code === '23505')
+                return;
+            await this.handleTransactionFailed(event);
+            throw error
+        }
     }
 
     @OnEvent(EVENTS.TRANSACTION_COMPLETED)
@@ -47,7 +54,11 @@ private schedulerRegistry: SchedulerRegistry) {}
         } catch (error) {
             if(error instanceof QueryFailedError && error.driverError.code === '23505')
                 return;
-            
+            await this.handleTransactionFailed({
+                eventId:event.id,
+                accountId: event.senderAccountId,
+                amount: event.amount
+            });
             throw error
         }
     }
@@ -58,10 +69,10 @@ private schedulerRegistry: SchedulerRegistry) {}
     }
 
     @OnEvent(EVENTS.TRANSACTION_FAILED)
-    async handleTransactionFailed(event: eventTypes.TransactionCompletedEvent){
+    async handleTransactionFailed(event: eventTypes.FailedRequestedEvent){
         await this.ledgerService.failedTransaction({
-            transactionId: event.id,
-            senderId: event.senderAccountId,
+            transactionId: event.eventId,
+            senderId: event.accountId,
             amount: event.amount
         })
     }
@@ -69,11 +80,11 @@ private schedulerRegistry: SchedulerRegistry) {}
     @OnEvent(EVENTS.TRANSACTION_CREATED)
     async handleTransactionCreated(event: eventTypes.TransactionCompletedEvent){
         const job = new CronJob(`* * 1 * * *`,async ()=>{
-            await this.ledgerService.failedTransaction({
-                transactionId: event.id,
-                senderId: event.senderAccountId,
+            await this.handleTransactionFailed({
+                eventId:event.id,
+                accountId: event.senderAccountId,
                 amount: event.amount
-            })
+            });
         });
 
         this.schedulerRegistry.addCronJob(event.id, job);
