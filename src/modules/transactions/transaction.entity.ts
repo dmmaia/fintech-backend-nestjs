@@ -3,29 +3,29 @@ import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedCol
 @Entity({ name: 'transactions' })
 export class Transaction {
   @PrimaryGeneratedColumn()
-  id: string;
+  id!: string;
 
   @Column('decimal', { precision: 12, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column({ length: 3 })
-  currency: string;
+  currency!: string;
 
   @Column()
-  senderAccountId: string;
+  senderAccountId!: string;
 
   @Column()
-  providerTransactionId: string;
+  providerTransactionId!: string;
 
   @Column()
-  receiverAccountId: string;
+  receiverAccountId!: string;
 
   @Column({ default: 'PENDING' })
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  status!: 'PENDING' | 'COMPLETED' | 'FAILED';
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

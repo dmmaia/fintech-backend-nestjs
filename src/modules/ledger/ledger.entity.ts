@@ -4,23 +4,23 @@ import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedCol
 @Unique(['accountId', 'transactionId', 'type'])
 export class LedgerEntry {
   @PrimaryGeneratedColumn()
-  id: string;
+  id!: string;
 
   @Column('int')
-  amount: number;
+  amount!: number;
 
   @Column()
-  accountId: string;
+  accountId!: string;
 
   @Column({nullable: false})
-  transactionId: string;
+  transactionId!: string;
 
   @Column()
-  type: string;
+  type!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

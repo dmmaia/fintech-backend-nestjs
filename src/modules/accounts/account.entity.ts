@@ -4,20 +4,20 @@ import { User } from '../users/user.entity';
 @Entity()
 export class Account {
   @PrimaryGeneratedColumn()
-  id: string;
+  id!: string;
 
   @Column()
-  ownerName: string;
+  ownerName!: string;
 
   @Column()
-  balance: number;
+  balance!: number;
 
   @Column()
-  reservedBalance: number;
+  reservedBalance!: number;
 
   @Column({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column()
-  user: string;
+  user!: string;
 }
