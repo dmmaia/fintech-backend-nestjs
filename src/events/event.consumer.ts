@@ -3,12 +3,16 @@ import { OnEvent } from "@nestjs/event-emitter";
 import { EVENTS } from "./event.constants";
 import * as eventTypes from "./event.types";
 import { LedgerService } from "src/modules/ledger/ledger.service";
-import { AccountsService } from "src/modules/accounts/accounts.service";
+import { Cron } from '@nestjs/schedule';
 import { QueryFailedError } from "typeorm";
+import { SchedulerRegistry } from "@nestjs/schedule";
+import { CronJob } from "cron";
 
 @Injectable()
 export class EventConsumer {
-  constructor(private ledgerService: LedgerService) {}
+  constructor(
+    private ledgerService: LedgerService,
+private schedulerRegistry: SchedulerRegistry) {}
 
     @OnEvent(EVENTS.DEPOSIT_REQUESTED)
     async handleDeposit(event: eventTypes.DepositRequestedEvent) {
@@ -34,14 +38,16 @@ export class EventConsumer {
     async handleTransaction(event: eventTypes.TransactionCompletedEvent) {
         try {
             await this.ledgerService.postDoubleEntry({
-            transactionId:event.id,
-            amount: event.amount,
-            receiverId: event.receiverAccountId,
-            senderId: event.senderAccountId
-        })
+                transactionId:event.id,
+                amount: event.amount,
+                receiverId: event.receiverAccountId,
+                senderId: event.senderAccountId
+            })
+            this.schedulerRegistry.deleteCronJob(event.id);
         } catch (error) {
             if(error instanceof QueryFailedError && error.driverError.code === '23505')
                 return;
+            
             throw error
         }
     }
@@ -62,6 +68,15 @@ export class EventConsumer {
 
     @OnEvent(EVENTS.TRANSACTION_CREATED)
     async handleTransactionCreated(event: eventTypes.TransactionCompletedEvent){
-        //Will create a cron to handle timeout and change to failed
+        const job = new CronJob(`* * 1 * * *`,async ()=>{
+            await this.ledgerService.failedTransaction({
+                transactionId: event.id,
+                senderId: event.senderAccountId,
+                amount: event.amount
+            })
+        });
+
+        this.schedulerRegistry.addCronJob(event.id, job);
+        job.start();
     }
 }

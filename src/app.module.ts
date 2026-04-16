@@ -10,6 +10,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
         inject: [ConfigService],
         global:true
     }),
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     AccountsModule,
     TransactionsModule,

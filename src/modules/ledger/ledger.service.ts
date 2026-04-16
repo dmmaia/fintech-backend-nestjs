@@ -37,6 +37,12 @@ export class LedgerService {
 
   async failedTransaction({transactionId, senderId, amount}){
     await this.dataSource.transaction(async (manager)=>{
+      await manager.insert(LedgerEntry, {
+        accountId: senderId,
+        amount: amount,
+        type: 'FAILED',
+        transactionId
+      })
       await manager.increment(Account, {id:senderId}, 'reservedBalance', -amount)
       await manager.update(Transaction, {id:transactionId}, {status: "FAILED"})
     })
