@@ -7,10 +7,14 @@ import {
 import { ProviderWebhookDto } from './webhooks.dto';
 import { TransactionsService } from '../transactions/transactions.service';
 import { ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EVENTS } from 'src/events/event.constants';
 
 @Controller('webhooks')
 export class WebhooksController {
-  constructor(private readonly transactionsService: TransactionsService) {
+  constructor(
+    private readonly transactionsService: TransactionsService,
+  private eventEmitter: EventEmitter2,) {
   }
 
   @ApiOperation({
@@ -35,10 +39,14 @@ export class WebhooksController {
 
     if (!tx) throw new NotFoundException();
 
-    if (payload.status === "succeeded") {
-      await this.transactionsService.changeStatus(tx.id, "COMPLETED");
-    } else {
-      await this.transactionsService.changeStatus(tx.id, "FAILED");
+    if(payload.status === "succeeded"){
+      this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {
+          ...tx
+        });
+    }else{
+      this.eventEmitter.emit(EVENTS.TRANSACTION_FAILED, {
+          ...tx
+        });
     }
   }
 }

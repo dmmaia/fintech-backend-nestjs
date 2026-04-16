@@ -43,15 +43,6 @@ export class TransactionsService {
   }
 
   async changeStatus(id, status) {
-    const transaction = await this.transactionRepository.findOneBy({id})
-    if(status == "COMPLETED")
-      this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {
-          ...transaction
-        });
-    else
-      this.eventEmitter.emit(EVENTS.TRANSACTION_FAILED, {
-          ...transaction
-        });
     await this.transactionRepository.update(id, {status})
   }
 

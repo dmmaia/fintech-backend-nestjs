@@ -82,6 +82,8 @@ export class LedgerService {
       await manager.increment(Account, {id: senderId}, 'balance', -amount)
       await manager.increment(Account, {id:senderId}, 'reservedBalance', -amount)
       await manager.increment(Account, {id: receiverId}, 'balance', amount)
+
+      await manager.update(Transaction, {id: transactionId}, {status: "COMPLETED"})
     })
   }
 
