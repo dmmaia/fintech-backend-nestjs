@@ -9,12 +9,15 @@ import { TransactionsService } from '../transactions/transactions.service';
 import { ApiBody, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENTS } from 'src/events/event.constants';
+import { DataSource } from 'typeorm';
+import { Transaction } from '../transactions/transaction.entity';
 
 @Controller('webhooks')
 export class WebhooksController {
   constructor(
     private readonly transactionsService: TransactionsService,
-  private eventEmitter: EventEmitter2,) {
+  private eventEmitter: EventEmitter2,
+private dataSource: DataSource,) {
   }
 
   @ApiOperation({
@@ -38,6 +41,15 @@ export class WebhooksController {
     const tx = await this.transactionsService.findOneByProvider(payload.providerTransactionId);
 
     if (!tx) throw new NotFoundException();
+    
+    await this.dataSource.transaction(async (manager)=> {
+      await manager.findOne(Transaction, {
+        where: { id: tx.id },
+        lock: { mode: 'pessimistic_write' }
+      })
+    })
+    
+    if (tx.status !== "PENDING") return;
 
     if(payload.status === "succeeded"){
       this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {

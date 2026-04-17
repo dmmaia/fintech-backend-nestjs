@@ -1,11 +1,17 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
 
 @Entity({ name: 'transactions' })
 export class Transaction {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id!: string;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('int')
   amount!: number;
 
   @Column({ length: 3 })
@@ -20,8 +26,8 @@ export class Transaction {
   @Column()
   receiverAccountId!: string;
 
-  @Column({ default: 'PENDING' })
-  status!: 'PENDING' | 'COMPLETED' | 'FAILED';
+  @Column({ type: 'enum', enum: OrderStatus ,default: OrderStatus.PENDING})
+  status!: OrderStatus;
 
   @CreateDateColumn()
   createdAt!: Date;

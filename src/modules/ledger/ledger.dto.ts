@@ -1,15 +1,19 @@
 import { IsUUID, IsNumber, IsString, IsIn } from 'class-validator';
+import { LedgerCategory, LedgerType } from './ledger.entity';
 
 export class CreateLedgerDto {
     @IsNumber()
-    amount: number;
+    amount!: number;
     
     @IsUUID()
-    accountId: string;
+    accountId!: string;
 
     @IsUUID()
-    transactionId: string;
+    transactionId!: string;
 
     @IsString()
-    type: string;
+    type!: LedgerType;
+
+    @IsString()
+    category!: LedgerCategory
 }

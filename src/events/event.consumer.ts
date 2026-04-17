@@ -7,11 +7,14 @@ import { Cron } from '@nestjs/schedule';
 import { QueryFailedError } from "typeorm";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
+import { TransactionsService } from "src/modules/transactions/transactions.service";
+import { LedgerType, LedgerCategory } from "src/modules/ledger/ledger.entity";
 
 @Injectable()
 export class EventConsumer {
   constructor(
     private ledgerService: LedgerService,
+    private transactionsService: TransactionsService,
 private schedulerRegistry: SchedulerRegistry) {}
 
     @OnEvent(EVENTS.DEPOSIT_REQUESTED)
@@ -19,7 +22,8 @@ private schedulerRegistry: SchedulerRegistry) {}
         await this.ledgerService.create({
             accountId: event.accountId,
             amount: event.amount,
-            type: 'CREDIT',
+            type: LedgerType.CREDIT,
+            category: LedgerCategory.SETTLEMENT,
             transactionId: event.eventId
         })
     }
@@ -30,7 +34,8 @@ private schedulerRegistry: SchedulerRegistry) {}
             await this.ledgerService.create({
                 accountId: event.accountId,
                 amount: event.amount,
-                type: 'DEBIT',
+                type: LedgerType.DEBIT,
+                category: LedgerCategory.SETTLEMENT,
                 transactionId: event.eventId
             })
         } catch (error) {
@@ -78,16 +83,17 @@ private schedulerRegistry: SchedulerRegistry) {}
     }
 
     @OnEvent(EVENTS.TRANSACTION_CREATED)
-    async handleTransactionCreated(event: eventTypes.TransactionCompletedEvent){
+    async handleTransactionCreated(id:string){
+        const transaction = await this.transactionsService.findOne(id);
         const job = new CronJob(`* * 1 * * *`,async ()=>{
             await this.handleTransactionFailed({
-                eventId:event.id,
-                accountId: event.senderAccountId,
-                amount: event.amount
+                eventId:transaction.id,
+                accountId: transaction.senderAccountId,
+                amount: transaction.amount
             });
         });
 
-        this.schedulerRegistry.addCronJob(event.id, job);
+        this.schedulerRegistry.addCronJob(transaction.id, job);
         job.start();
     }
 }

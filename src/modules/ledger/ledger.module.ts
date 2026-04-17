@@ -3,12 +3,12 @@ import { LedgerService } from './ledger.service';
 import { LedgerController } from './ledger.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LedgerEntry } from './ledger.entity';
-import { AccountsModule } from '../accounts/accounts.module';
+import { TransactionsModule } from '../transactions/transactions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([LedgerEntry]),
-    AccountsModule
+    TransactionsModule
   ],
   controllers: [LedgerController],
   providers: [LedgerService],

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTransactionDto, DepositDto } from './transaction.dto';
-import { Transaction } from './transaction.entity';
+import { Transaction, OrderStatus } from './transaction.entity';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid'
 import { AccountsService } from '../accounts/accounts.service';
 import { EVENTS } from 'src/events/event.constants';
 import { Account } from '../accounts/account.entity';
+import { LedgerEntry, LedgerCategory, LedgerType } from '../ledger/ledger.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -24,13 +25,23 @@ export class TransactionsService {
       throw new Error("Insufficient funds")
 
     return await this.dataSource.transaction(async (manager)=> {
-      const newTransaction = await manager.insert(Transaction,{
+      const transactionObject = {
+        id: uuid(),
         amount: dto.amount,
-        status: "PENDING",
+        status: OrderStatus.PENDING,
         senderAccountId: dto.senderAccountId,
         providerTransactionId: dto.providerTransactionId,
         receiverAccountId: dto.receiverAccountId
-      })
+      }
+      const newTransaction = await manager.insert(Transaction,transactionObject)
+      
+      await manager.insert(LedgerEntry, {
+          accountId: dto.senderAccountId,
+          amount: -dto.amount,
+          type: LedgerType.DEBIT,
+          category: LedgerCategory.RESERVE,
+          transactionId: transactionObject.id
+        })
 
       await manager.increment(Account, {id:dto.senderAccountId}, 'reservedBalance', dto.amount)
 
@@ -75,7 +86,9 @@ export class TransactionsService {
   }
 
   async findOneByProvider(id: string) {
-    const transaction = await this.transactionRepository.findOneBy({providerTransactionId:id})
+    const transaction = await this.transactionRepository.findOneBy({
+      providerTransactionId:id,
+    })
     if (!transaction) throw new NotFoundException('Transaction not found');
     return transaction
   }
