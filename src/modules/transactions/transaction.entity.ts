@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -7,6 +7,7 @@ export enum OrderStatus {
 }
 
 @Entity({ name: 'transactions' })
+@Unique(['providerTransactionId'])
 export class Transaction {
   @PrimaryColumn()
   id!: string;

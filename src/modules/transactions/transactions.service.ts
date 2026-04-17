@@ -43,6 +43,10 @@ export class TransactionsService {
           transactionId: transactionObject.id
         })
 
+      await manager.findOne(Account, {
+        where: { id: dto.senderAccountId },
+        lock: { mode: 'pessimistic_write' }
+      });
       await manager.increment(Account, {id:dto.senderAccountId}, 'reservedBalance', dto.amount)
 
       this.eventEmitter.emit(EVENTS.TRANSACTION_CREATED, {

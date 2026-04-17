@@ -44,6 +44,11 @@ export class LedgerService {
     if (transaction.status !== 'PENDING') return;
 
     await this.dataSource.transaction(async (manager)=>{
+      await manager.findOne(Account, {
+        where: { id: senderId },
+        lock: { mode: 'pessimistic_write' }
+      });
+
       await manager.insert(LedgerEntry, {
         accountId: senderId,
         amount: amount,
@@ -74,13 +79,6 @@ export class LedgerService {
       const entries = [
         {
           accountId: senderId,
-          amount: amount,
-          type: LedgerType.CREDIT,
-          category: LedgerCategory.RELEASE,
-          transactionId
-        },
-        {
-          accountId: senderId,
           amount: -amount,
           type: LedgerType.DEBIT,
           category: LedgerCategory.SETTLEMENT,
@@ -101,7 +99,23 @@ export class LedgerService {
       }
 
       await manager.insert(LedgerEntry, entries)
+      await manager.insert(LedgerEntry, {
+          accountId: senderId,
+          amount: amount,
+          type: LedgerType.CREDIT,
+          category: LedgerCategory.RELEASE,
+          transactionId
+        },)
       
+      await manager.findOne(Account, {
+        where: { id: senderId },
+        lock: { mode: 'pessimistic_write' }
+      });
+      await manager.findOne(Account, {
+        where: { id: receiverId },
+        lock: { mode: 'pessimistic_write' }
+      });
+
       await manager.increment(Account, {id: senderId}, 'balance', -amount)
       await manager.increment(Account, {id:senderId}, 'reservedBalance', -amount)
       await manager.increment(Account, {id: receiverId}, 'balance', amount)
