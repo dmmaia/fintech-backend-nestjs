@@ -24,6 +24,9 @@ export class TransactionsService {
     if(account.balance - account.reservedBalance<dto.amount)
       throw new Error("Insufficient funds")
 
+    const existing = await this.transactionRepository.findOneBy({ providerTransactionId:dto.providerTransactionId })
+    if (existing) return existing;
+
     return await this.dataSource.transaction(async (manager)=> {
       const transactionObject = {
         id: uuid(),

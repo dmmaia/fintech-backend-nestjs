@@ -14,8 +14,7 @@ import { LedgerType, LedgerCategory } from "src/modules/ledger/ledger.entity";
 export class EventConsumer {
   constructor(
     private ledgerService: LedgerService,
-    private transactionsService: TransactionsService,
-private schedulerRegistry: SchedulerRegistry) {}
+    private transactionsService: TransactionsService,) {}
 
     @OnEvent(EVENTS.DEPOSIT_REQUESTED)
     async handleDeposit(event: eventTypes.DepositRequestedEvent) {
@@ -55,7 +54,6 @@ private schedulerRegistry: SchedulerRegistry) {}
                 receiverId: event.receiverAccountId,
                 senderId: event.senderAccountId
             })
-            this.schedulerRegistry.deleteCronJob(event.id);
         } catch (error) {
             if(error instanceof QueryFailedError && error.driverError.code === '23505')
                 return;
@@ -85,6 +83,13 @@ private schedulerRegistry: SchedulerRegistry) {}
     @OnEvent(EVENTS.TRANSACTION_CREATED)
     async handleTransactionCreated(id:string){
         const transaction = await this.transactionsService.findOne(id);
+        setTimeout(async () => {
+            await this.handleTransactionFailed({
+                eventId:transaction.id,
+                accountId: transaction.senderAccountId,
+                amount: transaction.amount
+            });
+        }, 3600000);
         const job = new CronJob(`* * 1 * * *`,async ()=>{
             await this.handleTransactionFailed({
                 eventId:transaction.id,
@@ -92,8 +97,5 @@ private schedulerRegistry: SchedulerRegistry) {}
                 amount: transaction.amount
             });
         });
-
-        this.schedulerRegistry.addCronJob(transaction.id, job);
-        job.start();
     }
 }

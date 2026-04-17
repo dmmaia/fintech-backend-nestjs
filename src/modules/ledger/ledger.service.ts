@@ -76,6 +76,11 @@ export class LedgerService {
     }
 
     await this.dataSource.transaction(async (manager) =>{
+      await manager.findOne(Transaction, {
+        where: { id: transactionId },
+        lock: { mode: 'pessimistic_write' }
+      });
+      
       const entries = [
         {
           accountId: senderId,
