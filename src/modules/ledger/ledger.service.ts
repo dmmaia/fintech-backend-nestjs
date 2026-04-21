@@ -111,16 +111,16 @@ export class LedgerService {
           category: LedgerCategory.RELEASE,
           transactionId
         },)
-      
-      await manager.findOne(Account, {
-        where: { id: senderId },
-        lock: { mode: 'pessimistic_write' }
-      });
-      await manager.findOne(Account, {
-        where: { id: receiverId },
-        lock: { mode: 'pessimistic_write' }
-      });
 
+      const users = [senderId, receiverId].sort()
+
+      for( var id in users){
+        await manager.findOne(Account, {
+          where: { id: id },
+          lock: { mode: 'pessimistic_write' }
+        });
+      }
+    
       await manager.increment(Account, {id: senderId}, 'balance', -amount)
       await manager.increment(Account, {id:senderId}, 'reservedBalance', -amount)
       await manager.increment(Account, {id: receiverId}, 'balance', amount)
