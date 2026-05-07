@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresConfigService } from './config/database.config';
@@ -12,6 +12,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from './logger/logger.module';
+import { RequestMiddleware } from './middlewares/request.middleware';
 
 @Module({
   imports: [
@@ -41,4 +42,10 @@ import { LoggerModule } from './logger/logger.module';
     WebhooksModule
   ]
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestMiddleware)
+      .forRoutes('');
+  }
+}
