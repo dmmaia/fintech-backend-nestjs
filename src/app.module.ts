@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     AccountsModule,
+    LoggerModule,
     TransactionsModule,
     LedgerModule,
     UsersModule,
