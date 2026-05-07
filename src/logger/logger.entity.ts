@@ -11,6 +11,9 @@ export class Logger {
   @PrimaryGeneratedColumn()
   id!: string;
 
+  @Column()
+  level!: string;
+
   @Column({ type: 'enum', enum: Type})
   type!: Type;
 
