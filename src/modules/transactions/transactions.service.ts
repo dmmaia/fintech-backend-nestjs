@@ -9,6 +9,7 @@ import { AccountsService } from '../accounts/accounts.service';
 import { EVENTS } from 'src/events/event.constants';
 import { Account } from '../accounts/account.entity';
 import { LedgerEntry, LedgerCategory, LedgerType } from '../ledger/ledger.entity';
+import { LoggersService } from 'src/logger/logger.service';
 
 @Injectable()
 export class TransactionsService {
@@ -16,14 +17,30 @@ export class TransactionsService {
     @InjectRepository(Transaction) private readonly transactionRepository: Repository<Transaction>,
     private eventEmitter: EventEmitter2,
     private accountService: AccountsService,
+    private loggersService: LoggersService,
     private dataSource: DataSource,
   ){}
 
   async create(dto: CreateTransactionDto) {
     const account = await this.accountService.findOne(dto.senderAccountId)
-    if(account.balance - account.reservedBalance<dto.amount)
-      throw new Error("Insufficient funds")
 
+    if(account.balance - account.reservedBalance<dto.amount){
+      this.loggersService.warn("Insufficient funds", {
+        "path": "transactions/transfer",
+        "method": "POST",
+      });
+      throw new Error("Insufficient funds")
+    }
+
+    this.loggersService.info("Validating balance", {
+      "path": "transactions/transfer",
+      "method": "POST",
+    });
+
+    this.loggersService.info("Validating if already exists", {
+      "path": "transactions/transfer",
+      "method": "POST",
+    });
     const existing = await this.transactionRepository.findOneBy({ providerTransactionId:dto.providerTransactionId })
     if (existing) return existing;
 
@@ -37,6 +54,11 @@ export class TransactionsService {
         receiverAccountId: dto.receiverAccountId
       }
       const newTransaction = await manager.insert(Transaction,transactionObject)
+
+      this.loggersService.info("Transaction created", {
+        "path": "transactions/transfer",
+        "method": "POST",
+      });
       
       await manager.insert(LedgerEntry, {
           accountId: dto.senderAccountId,
@@ -46,11 +68,21 @@ export class TransactionsService {
           transactionId: transactionObject.id
         })
 
+      this.loggersService.info("Reserve balance Ledger entry created", {
+        "path": "transactions/transfer",
+        "method": "POST",
+      });
+
       await manager.findOne(Account, {
         where: { id: dto.senderAccountId },
         lock: { mode: 'pessimistic_write' }
       });
       await manager.increment(Account, {id:dto.senderAccountId}, 'reservedBalance', dto.amount)
+      
+      this.loggersService.info("Balance reserved", {
+        "path": "transactions/transfer",
+        "method": "POST",
+      });
 
       this.eventEmitter.emit(EVENTS.TRANSACTION_CREATED, {
           ...newTransaction

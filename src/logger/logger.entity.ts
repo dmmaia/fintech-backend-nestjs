@@ -27,7 +27,7 @@ export class Logger {
   userId!: string;
 
   @Column()
-  metadata!: JSON;
+  metadata!: Object;
 
   @CreateDateColumn()
   createdAt!: Date;

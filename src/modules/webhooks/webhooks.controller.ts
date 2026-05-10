@@ -11,12 +11,14 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EVENTS } from 'src/events/event.constants';
 import { DataSource } from 'typeorm';
 import { Transaction } from '../transactions/transaction.entity';
+import { LoggersService } from 'src/logger/logger.service';
 
 @Controller('webhooks')
 export class WebhooksController {
   constructor(
     private readonly transactionsService: TransactionsService,
   private eventEmitter: EventEmitter2,
+  private loggersService: LoggersService,
 private dataSource: DataSource,) {
   }
 
@@ -49,7 +51,18 @@ private dataSource: DataSource,) {
       })
     })
     
-    if (tx.status !== "PENDING") return;
+    if (tx.status !== "PENDING"){
+      this.loggersService.warn("Payments webhook called a already processed transaction", {
+          "path": "webhooks/payments",
+          "method": "POST",
+      });
+      return
+    };
+
+    this.loggersService.info("Payments webhook called", {
+        "path": "webhooks/payments",
+        "method": "POST",
+    });
 
     if(payload.status === "succeeded"){
       this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {

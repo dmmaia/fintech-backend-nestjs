@@ -9,15 +9,22 @@ import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
 import { TransactionsService } from "src/modules/transactions/transactions.service";
 import { LedgerType, LedgerCategory } from "src/modules/ledger/ledger.entity";
+import { LoggersService } from "src/logger/logger.service";
+import { Type } from "src/logger/logger.entity";
 
 @Injectable()
 export class EventConsumer {
   constructor(
     private ledgerService: LedgerService,
-    private transactionsService: TransactionsService,) {}
+    private transactionsService: TransactionsService,
+    private loggersService: LoggersService,) {}
 
     @OnEvent(EVENTS.DEPOSIT_REQUESTED)
     async handleDeposit(event: eventTypes.DepositRequestedEvent) {
+        this.loggersService.info("Deposit request event emmited", {
+            "event": "deposit_created",
+            "status": "created"
+        }, Type.event);
         await this.ledgerService.create({
             accountId: event.accountId,
             amount: event.amount,
@@ -30,6 +37,10 @@ export class EventConsumer {
     @OnEvent(EVENTS.WITHDRAW_REQUESTED)
     async handleWithdraw(event: eventTypes.DepositRequestedEvent) {
         try {
+            this.loggersService.info("Withdraw request event emmited", {
+                "event": "withdraw_created",
+                "status": "created"
+            }, Type.event);
             await this.ledgerService.create({
                 accountId: event.accountId,
                 amount: event.amount,
@@ -48,6 +59,11 @@ export class EventConsumer {
     @OnEvent(EVENTS.TRANSACTION_COMPLETED)
     async handleTransaction(event: eventTypes.TransactionCompletedEvent) {
         try {
+            this.loggersService.info("Transaction completed event emmited", {
+                "event": "transaction_created",
+                "status": "processed"
+            }, Type.event);
+
             await this.ledgerService.postDoubleEntry({
                 transactionId:event.id,
                 amount: event.amount,
@@ -65,14 +81,14 @@ export class EventConsumer {
             throw error
         }
     }
-
-    @OnEvent(EVENTS.TRANSACTION_COMPLETED)
-    async handleTransactionConcurrencySafety(event: eventTypes.TransactionCompletedEvent) {
-        await this.handleTransaction(event)
-    }
-
+    
     @OnEvent(EVENTS.TRANSACTION_FAILED)
     async handleTransactionFailed(event: eventTypes.FailedRequestedEvent){
+        this.loggersService.warn("Transaction creation failed event emmited", {
+            "event": "transaction_created",
+            "status": "failed"
+        }, Type.event);
+
         await this.ledgerService.failedTransaction({
             transactionId: event.eventId,
             senderId: event.accountId,
@@ -82,6 +98,11 @@ export class EventConsumer {
 
     @OnEvent(EVENTS.TRANSACTION_CREATED)
     async handleTransactionCreated(id:string){
+        this.loggersService.info("Transaction creation event emmited", {
+            "event": "transaction_created",
+            "status": "created"
+        }, Type.event);
+
         const transaction = await this.transactionsService.findOne(id);
         setTimeout(async () => {
             await this.handleTransactionFailed({
@@ -90,12 +111,5 @@ export class EventConsumer {
                 amount: transaction.amount
             });
         }, 3600000);
-        const job = new CronJob(`* * 1 * * *`,async ()=>{
-            await this.handleTransactionFailed({
-                eventId:transaction.id,
-                accountId: transaction.senderAccountId,
-                amount: transaction.amount
-            });
-        });
     }
 }

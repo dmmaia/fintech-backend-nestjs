@@ -12,6 +12,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from './logger/logger.module';
+import { ClsModule } from 'nestjs-cls';
 import { RequestMiddleware } from './middlewares/request.middleware';
 
 @Module({
@@ -31,6 +32,11 @@ import { RequestMiddleware } from './middlewares/request.middleware';
         inject: [ConfigService],
         global:true
     }),
+    ClsModule.forRoot({
+      global: true,
+      middleware: { mount: true, generateId: true, }
+      
+    }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     AccountsModule,
@@ -43,7 +49,7 @@ import { RequestMiddleware } from './middlewares/request.middleware';
   ]
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
+configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(RequestMiddleware)
       .forRoutes('');
