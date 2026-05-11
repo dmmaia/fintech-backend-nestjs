@@ -26,23 +26,20 @@ export class TransactionsService {
 
     if(account.balance - account.reservedBalance<dto.amount){
       this.loggersService.warn("Insufficient funds", {
-        "path": "transactions/transfer",
-        "method": "POST",
+        accountId: dto.senderAccountId,
+        amount: dto.amount,
       });
       throw new Error("Insufficient funds")
     }
 
-    this.loggersService.info("Validating balance", {
-      "path": "transactions/transfer",
-      "method": "POST",
-    });
-
-    this.loggersService.info("Validating if already exists", {
-      "path": "transactions/transfer",
-      "method": "POST",
-    });
     const existing = await this.transactionRepository.findOneBy({ providerTransactionId:dto.providerTransactionId })
-    if (existing) return existing;
+    if (existing) {
+      this.loggersService.warn("Duplicate transaction detected", {
+        transactionId: existing.id,
+        "action": "create"
+      });
+      return existing
+    };
 
     return await this.dataSource.transaction(async (manager)=> {
       const transactionObject = {
@@ -56,8 +53,10 @@ export class TransactionsService {
       const newTransaction = await manager.insert(Transaction,transactionObject)
 
       this.loggersService.info("Transaction created", {
-        "path": "transactions/transfer",
-        "method": "POST",
+        transactionId: transactionObject.id,
+        senderAccountId: dto.senderAccountId,
+        receiverAccountId: dto.receiverAccountId,
+        amount: dto.amount
       });
       
       await manager.insert(LedgerEntry, {
@@ -69,8 +68,8 @@ export class TransactionsService {
         })
 
       this.loggersService.info("Reserve balance Ledger entry created", {
-        "path": "transactions/transfer",
-        "method": "POST",
+        accountId: dto.senderAccountId,
+        amount: -dto.amount,
       });
 
       await manager.findOne(Account, {
@@ -80,8 +79,8 @@ export class TransactionsService {
       await manager.increment(Account, {id:dto.senderAccountId}, 'reservedBalance', dto.amount)
       
       this.loggersService.info("Balance reserved", {
-        "path": "transactions/transfer",
-        "method": "POST",
+        accountId: dto.senderAccountId,
+        amount: -dto.amount,
       });
 
       this.eventEmitter.emit(EVENTS.TRANSACTION_CREATED, {

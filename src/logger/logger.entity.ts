@@ -26,8 +26,8 @@ export class Logger {
   @Column()
   userId!: string;
 
-  @Column()
-  metadata!: Object;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata!: Record<string, any>;
 
   @CreateDateColumn()
   createdAt!: Date;

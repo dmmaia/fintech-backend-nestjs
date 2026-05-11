@@ -27,8 +27,8 @@ export class LedgerService {
         transactionId:dto.transactionId
       })
       this.loggersService.info("New "+dto.type+" ledger register created", {
-          "type": dto.type,
-          "status": "created"
+          type: dto.type,
+          status: "created"
       });
     })   
   }
@@ -63,20 +63,20 @@ export class LedgerService {
         transactionId
       },)
       this.loggersService.info("Reserve balance Ledger release created", {
-          "action": "failed transaction",
-        "status": "failed"
+          action: "failed transaction",
+          status: "failed"
       });
       await manager.increment(Account, {id:senderId}, 'reservedBalance', -amount)
       
       this.loggersService.info("User balance released", {
-        "action": "failed transaction",
-        "status": "failed"
+        action: "failed transaction",
+        status: "failed"
       });
       
       await manager.update(Transaction, {id:transactionId}, {status: OrderStatus.FAILED})
       this.loggersService.info("Transaction status changed", {
-        "action": "failed transaction",
-        "status": "failed"
+        action: "failed transaction",
+        status: "failed"
       });
     })
   }
@@ -89,14 +89,14 @@ export class LedgerService {
   }){
     if (amount <= 0) {
       this.loggersService.warn("Amount less than 0", {
-          "action": "post double entry"
+          action: "post double entry"
       });
       throw new Error('Invalid amount');
     }
 
     if (senderId === receiverId) {
       this.loggersService.warn("Sender and receiver are the same", {
-         "action": "post double entry"
+         action: "post double entry"
       });
       throw new Error('Sender and receiver cannot be the same');
     }
@@ -127,14 +127,14 @@ export class LedgerService {
 
       if (sum !== 0) {
         this.loggersService.warn("Ledger imbalance", {
-            "action": "post double entry"
+            action: "post double entry"
         });
         throw new Error('Ledger imbalance');
       }
 
       await manager.insert(LedgerEntry, entries)
       this.loggersService.info("Ledger double entry created", {
-          "action": "post double entry"
+          action: "post double entry"
       });
       await manager.insert(LedgerEntry, {
           accountId: senderId,
@@ -144,7 +144,7 @@ export class LedgerService {
           transactionId
         },)
       this.loggersService.info("Reserve balance Ledger release created", {
-          "action": "post double entry"
+          action: "post double entry"
       });
 
       const users = [senderId, receiverId].sort()
@@ -158,21 +158,21 @@ export class LedgerService {
     
       await manager.increment(Account, {id: senderId}, 'balance', -amount)
       this.loggersService.info("User sender balance debit", {
-       "action": "post double entry"
+       action: "post double entry"
       });
       await manager.increment(Account, {id:senderId}, 'reservedBalance', -amount)
       this.loggersService.info("User balance released", {
-       "action": "post double entry"
+       action: "post double entry"
       });
       await manager.increment(Account, {id: receiverId}, 'balance', amount)
       this.loggersService.info("User receiver balance credit", {
-       "action": "post double entry"
+       action: "post double entry"
       });
 
       await manager.update(Transaction, {id: transactionId}, {status: OrderStatus.COMPLETED})
       this.loggersService.info("Transaction status changed", {
-        "action": "post double entry",
-        "status": "completed"
+        action: "post double entry",
+        status: "completed"
       });
     })
   }

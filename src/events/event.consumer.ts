@@ -21,9 +21,9 @@ export class EventConsumer {
 
     @OnEvent(EVENTS.DEPOSIT_REQUESTED)
     async handleDeposit(event: eventTypes.DepositRequestedEvent) {
-        this.loggersService.info("Deposit request event emmited", {
-            "event": "deposit_created",
-            "status": "created"
+        this.loggersService.info("Deposit request event published", {
+            event: "deposit_created",
+            status: "created"
         }, Type.event);
         await this.ledgerService.create({
             accountId: event.accountId,
@@ -37,9 +37,9 @@ export class EventConsumer {
     @OnEvent(EVENTS.WITHDRAW_REQUESTED)
     async handleWithdraw(event: eventTypes.DepositRequestedEvent) {
         try {
-            this.loggersService.info("Withdraw request event emmited", {
-                "event": "withdraw_created",
-                "status": "created"
+            this.loggersService.info("Withdraw request event published", {
+                event: "withdraw_created",
+                status: "created"
             }, Type.event);
             await this.ledgerService.create({
                 accountId: event.accountId,
@@ -59,9 +59,9 @@ export class EventConsumer {
     @OnEvent(EVENTS.TRANSACTION_COMPLETED)
     async handleTransaction(event: eventTypes.TransactionCompletedEvent) {
         try {
-            this.loggersService.info("Transaction completed event emmited", {
-                "event": "transaction_created",
-                "status": "processed"
+            this.loggersService.info("Transaction completed event published", {
+                event: "transaction_created",
+                status: "processed"
             }, Type.event);
 
             await this.ledgerService.postDoubleEntry({
@@ -84,9 +84,9 @@ export class EventConsumer {
     
     @OnEvent(EVENTS.TRANSACTION_FAILED)
     async handleTransactionFailed(event: eventTypes.FailedRequestedEvent){
-        this.loggersService.warn("Transaction creation failed event emmited", {
-            "event": "transaction_created",
-            "status": "failed"
+        this.loggersService.warn("Transaction creation failed event published", {
+            event: "transaction_created",
+            status: "failed"
         }, Type.event);
 
         await this.ledgerService.failedTransaction({
@@ -98,9 +98,9 @@ export class EventConsumer {
 
     @OnEvent(EVENTS.TRANSACTION_CREATED)
     async handleTransactionCreated(id:string){
-        this.loggersService.info("Transaction creation event emmited", {
-            "event": "transaction_created",
-            "status": "created"
+        this.loggersService.info("Transaction creation event published", {
+            event: "transaction_created",
+            status: "created"
         }, Type.event);
 
         const transaction = await this.transactionsService.findOne(id);

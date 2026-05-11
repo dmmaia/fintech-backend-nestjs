@@ -11,7 +11,7 @@ export class LoggersService {
     private readonly cls: ClsService
   ){}
 
-  create(level:string, message: string, metadata: Object, type=Type.request){
+  async create(level:string, message: string, metadata: Object, type=Type.request){
      const logger: Logger = new Logger();
 
     logger.level = level;
@@ -20,19 +20,19 @@ export class LoggersService {
     logger.requestId = this.cls.getId();
     logger.userId = this.cls.get("userId")
     logger.metadata = metadata;
-    this.LoggerRepository.save(logger);
+    await this.LoggerRepository.save(logger);
   }
 
-  info(message: string, metadata: Object, type=Type.request) {
-    this.create("info", message, metadata, type)
+  async info(message: string, metadata: Object, type=Type.request) {
+    await this.create("info", message, metadata, type)
   }
 
-  warn(message: string, metadata: Object, type=Type.request) {
-    this.create("warn", message, metadata, type)
+  async warn(message: string, metadata: Object, type=Type.request) {
+    await this.create("warn", message, metadata, type)
   }
 
-  error(message: string, metadata: Object, type=Type.request) {
-    this.create("error", message, metadata, type)
+  async error(message: string, metadata: Object, type=Type.request) {
+    await this.create("error", message, metadata, type)
   }
 
 }

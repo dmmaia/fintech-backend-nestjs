@@ -53,16 +53,11 @@ private dataSource: DataSource,) {
     
     if (tx.status !== "PENDING"){
       this.loggersService.warn("Payments webhook called a already processed transaction", {
-          "path": "webhooks/payments",
-          "method": "POST",
+          transactionId: tx.id,
+          status: tx.status
       });
       return
     };
-
-    this.loggersService.info("Payments webhook called", {
-        "path": "webhooks/payments",
-        "method": "POST",
-    });
 
     if(payload.status === "succeeded"){
       this.eventEmitter.emit(EVENTS.TRANSACTION_COMPLETED, {
