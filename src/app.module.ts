@@ -14,6 +14,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from './logger/logger.module';
 import { ClsModule } from 'nestjs-cls';
 import { RequestMiddleware } from './middlewares/request.middleware';
+import { APP_FILTER } from '@nestjs/core';
+import { HttpExceptionFilter } from './exceptions/http-exception.filter';
 
 @Module({
   imports: [
@@ -46,12 +48,18 @@ import { RequestMiddleware } from './middlewares/request.middleware';
     UsersModule,
     AuthModule,
     WebhooksModule
+  ],
+  providers:[
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
   ]
 })
 export class AppModule implements NestModule {
 configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(RequestMiddleware)
-      .forRoutes('');
+      .forRoutes('*');
   }
 }

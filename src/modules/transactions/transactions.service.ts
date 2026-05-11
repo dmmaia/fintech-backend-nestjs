@@ -36,7 +36,7 @@ export class TransactionsService {
     if (existing) {
       this.loggersService.warn("Duplicate transaction detected", {
         transactionId: existing.id,
-        "action": "create"
+        action: "create"
       });
       return existing
     };
